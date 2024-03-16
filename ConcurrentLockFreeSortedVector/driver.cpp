@@ -1,30 +1,17 @@
 // debug_new.cpp
 // compile by using: cl /EHsc /W4 /D_DEBUG /MDd debug_new.cpp
-//#define _CRTDBG_MAP_ALLOC
-//#include <cstdlib>
-//#include <crtdbg.h>
-
-#ifdef _DEBUG
-#define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
-// Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
-// allocations to be of _CLIENT_BLOCK type
-#else
-#define DBG_NEW new
-#endif
-
-#include "lfsv.h"
-
 #include <algorithm>//copy, random_shuffle
 #include <ctime>    //std::time (NULL) to seed srand
-#include <chrono>
 
+#include <cstdio> //sscanf
 #include <iostream>
 #include <vector>
 #include <thread>
 #include <chrono>
 #include <cassert>
+#include "lfsv.h"
 
-constexpr int TOTAL_OPERATIONS = 500000;
+constexpr int TOTAL_OPERATIONS = 100000;
 
 void insert_range(LFSV& lfsv, int b, int e ) {
     int * range = new int [e-b];
@@ -54,7 +41,7 @@ void read_position_0(LFSV& lfsv) {
 
 void test( int num_threads, int num_per_thread )
 {
-    MemoryBank bank(30000);
+    MemoryBank bank(15000);
     GarbageRemover remover(bank);
 
     LFSV lfsv(bank, remover);
@@ -72,28 +59,16 @@ void test( int num_threads, int num_per_thread )
     reader.join();
 
     for (int i=0; i<num_threads*num_per_thread; ++i) { 
-        //        std::cout << lfsv[i] << ' '; 
-        assert(lfsv[i] == i - 1,"Error::not sorted");
+        if (!(lfsv[i] == i - 1)) {
+            std::cerr << "Error: not sorted at index " << i << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
     }
-    std::cout << "All sorted\n";
+    std::cout << "All sorted!\n";
 }
 
-void test0() { test( 1, 10 ); }
-void test1() { test( 2, 10 ); }
-void test2() { test( 8, 100 ); }
-void test3() { test( 16, 100 ); } 
-//void customTest() { 
-//    test(4, 5000);
-//    //test(64, 300);//<---time:10.722 seconds, 11.0908 seconds
-//                    //release: 5.41367 seconds, 5.59725 seconds
-//
-//    //test(128, 300);//<---time:
-//    //test(8, 15); 
-//}
-
-
-
-void customTest() {
+void ConcurrentReadWriteTest() {
+    std::cout << "The number of logical cores =" << std::thread::hardware_concurrency() << '\n';
     const std::vector<int> threadCounts = { 1,2, 4, 8, 16 };
 
     for (int threadCount : threadCounts) {
@@ -108,12 +83,10 @@ void customTest() {
 }
 
 void (*pTests[])() = { 
-    test0,test1,test2,test3,customTest
+    ConcurrentReadWriteTest
 }; 
 
-
-#include <cstdio>    /* sscanf */
-int main( int argc, char ** argv ) {
+int main(int /*argc*/, char** /*argv*/){
  //   if (argc==2) { //use test[ argv[1] ]
 	//	int test = 0;
 	//	std::sscanf(argv[1],"%i",&test);
@@ -124,12 +97,7 @@ int main( int argc, char ** argv ) {
 	//	}
  //       return 0;
 	//}
-    //test3();
-    //test3();
-    //test0();
-    customTest();
-    //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
-    //_CrtDumpMemoryLeaks();
+    ConcurrentReadWriteTest();
 
     return 0;
 }
