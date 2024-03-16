@@ -129,12 +129,12 @@
   <ItemGroup>
     <ClCompile Include="driver.cpp" />
     <ClCompile Include="GarbageRemover.cpp" />
-    <ClCompile Include="lfsv.cpp" />
+    <ClCompile Include="LFSV.cpp" />
     <ClCompile Include="MemoryBank.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GarbageRemover.h" />
-    <ClInclude Include="lfsv.h" />
+    <ClInclude Include="LFSV.h" />
     <ClInclude Include="MemoryBank.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
