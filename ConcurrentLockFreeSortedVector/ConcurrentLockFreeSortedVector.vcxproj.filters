@@ -23,5 +23,11 @@
     <ClInclude Include="lfsv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GarbageRemover.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryBank.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

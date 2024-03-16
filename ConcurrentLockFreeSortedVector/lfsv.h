@@ -4,6 +4,8 @@
 #include <vector>         // std::vector
 #include <deque>          // std::deque
 #include <mutex>          // std::mutex
+#include "MemoryBank.h"
+#include "GarbageRemover.h"
 
 struct Pair {
     std::vector<int>* pointer;
@@ -11,94 +13,55 @@ struct Pair {
 }; // __attribute__((aligned(16),packed));
 // for some compilers alignment needed to stop std::atomic<Pair>::load to segfault
 
-class MemoryBank {
-    std::deque< std::vector<int>*> slots;
-    std::mutex m;
-public:
-    MemoryBank() : slots(50000){//6000->3000
-        for (int i = 0; i < 50000; ++i) {
-            slots[i] = reinterpret_cast<std::vector<int>*>(new char[sizeof(std::vector<int>)] {});
-        }
-    }
-    std::vector<int>* Get() {
-        std::lock_guard<std::mutex> lock(m);
-        std::vector<int>* p = slots[0];
-        slots.pop_front();
-        return p;
-    }
-    void Store(std::vector<int>* p) {
-        std::lock_guard<std::mutex> lock(m);
-        slots.push_back(p);
-    }
-    ~MemoryBank() {
-        for (auto& el : slots) { 
-            el->~vector();//ADDED
-            delete[] reinterpret_cast<char*>(el); 
-        }
-    }
-};
-
 class LFSV {
-    MemoryBank mb;
-    std::atomic< Pair > pdata;
+    std::atomic<Pair> mDataPtr;
+    MemoryBank& mRefMemoryBank;
+    GarbageRemover& mRefRemover;
 
 public:
 
-    LFSV() : mb{}, pdata(Pair{ new (mb.Get()) std::vector<int>, 1 }) {
-		//        std::cout << "Is lockfree " << pdata.is_lock_free() << std::endl;
-	}
+    LFSV(MemoryBank& bank, GarbageRemover& remover) : mRefMemoryBank(bank), mRefRemover(remover), mDataPtr({ bank.Acquire(), 1 }) {}
 
-    ~LFSV() { 
-        mb.Store(pdata.load().pointer);
+    ~LFSV() {
+        auto data = mDataPtr.load().pointer;
+        mRefRemover.ScheduleForDeletion(data); // Schedule the final vector for deletion
     }
 
-    void Insert( int const & v ) {
-        Pair pdata_new, pdata_old;
-        pdata_new.pointer  = nullptr;
-        do {
+    void Insert(int const& v) {
+        Pair oldData = mDataPtr.load();
+        while (true) {
+            Pair newData{ mRefMemoryBank.Acquire(), 1 };
+            *newData.pointer = *oldData.pointer; // Copy data
+            // Insert v into newData.pointer in sorted order
+            auto it = std::lower_bound(newData.pointer->begin(), newData.pointer->end(), v);
+            newData.pointer->insert(it, v); // insert value in the correct position
 
-            if (pdata_new.pointer) {
-                mb.Store(pdata_new.pointer);
+            if (mDataPtr.compare_exchange_weak(oldData, newData)) {
+                mRefRemover.ScheduleForDeletion(oldData.pointer); // Old data scheduled for delayed deletion
+                break;
             }
-
-            pdata_old.pointer = pdata.load().pointer;
-            pdata_old.ref_count = 1;
-            pdata_new.pointer = new (mb.Get()) std::vector<int>(*pdata_old.pointer);
-            pdata_new.ref_count = 1;
-
-            // working on a local copy
-            std::vector<int>::iterator b = pdata_new.pointer->begin();
-            std::vector<int>::iterator e = pdata_new.pointer->end();
-            if ( b==e || v>=pdata_new.pointer->back() ) { pdata_new.pointer->push_back( v ); } //first in empty or last element
             else {
-                for ( ; b!=e; ++b ) {
-                    if ( *b >= v ) {
-                        pdata_new.pointer->insert( b, v );
-                        break;
-                    }
-                }
+                mRefMemoryBank.Release(newData.pointer); // Release if CAS fails
             }
-
-        } while ( !(this->pdata).compare_exchange_weak( pdata_old, pdata_new  ));        
-        pdata_old.pointer->~vector();//ADDED
-        mb.Store(pdata_old.pointer);
+        }
     }
+
 
     int operator[] (int pos) { // not a const method anymore
         Pair pdata_new, pdata_old;
         do { // before read - increment counter, use CAS
-            pdata_old = pdata.load();
+            pdata_old = mDataPtr.load();
             pdata_new = pdata_old;
             ++pdata_new.ref_count;
-        } while (!(this->pdata).compare_exchange_weak(pdata_old, pdata_new));
+        } while (!(this->mDataPtr).compare_exchange_weak(pdata_old, pdata_new));
 
         int ret_val = (*pdata_new.pointer)[pos];
 
         do { // before return - decrement counter, use CAS
-            pdata_old = pdata.load();
+            pdata_old = mDataPtr.load();
             pdata_new = pdata_old;
             --pdata_new.ref_count;
-        } while (!(this->pdata).compare_exchange_weak(pdata_old, pdata_new));
+        } while (!(this->mDataPtr).compare_exchange_weak(pdata_old, pdata_new));
 
         return ret_val;
     }

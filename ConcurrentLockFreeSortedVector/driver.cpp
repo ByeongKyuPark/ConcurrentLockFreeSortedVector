@@ -24,6 +24,8 @@
 #include <chrono>
 #include <cassert>
 
+constexpr int TOTAL_OPERATIONS = 500000;
+
 void insert_range(LFSV& lfsv, int b, int e ) {
     int * range = new int [e-b];
     for ( int i=b; i<e; ++i ) {
@@ -52,7 +54,10 @@ void read_position_0(LFSV& lfsv) {
 
 void test( int num_threads, int num_per_thread )
 {
-    LFSV lfsv;
+    MemoryBank bank(30000);
+    GarbageRemover remover(bank);
+
+    LFSV lfsv(bank, remover);
 
     std::vector<std::thread> threads;
     lfsv.Insert( -1 );
@@ -87,14 +92,14 @@ void test3() { test( 16, 100 ); }
 //}
 
 
+
 void customTest() {
-    std::vector<int> threadCounts = { 1,2, 4, 8, 16 };
-    int operationsPerThread = 10000; // Adjust based on your needs
+    const std::vector<int> threadCounts = { 1,2, 4, 8, 16 };
 
     for (int threadCount : threadCounts) {
         auto startTime = std::chrono::high_resolution_clock::now();
 
-        test(threadCount, operationsPerThread / threadCount);
+        test(threadCount, TOTAL_OPERATIONS / threadCount);
 
         auto endTime = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed = endTime - startTime;
