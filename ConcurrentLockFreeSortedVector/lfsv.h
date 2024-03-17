@@ -9,19 +9,24 @@
 #include "MemoryBank.h"
 #include "GarbageRemover.h"
 
-struct Pair {
+// 'DeferredVectorNodeHandle' is a POD struct used with std::atomic for compare-and-swap (CAS) operations.
+// In C++11 onwards, std::atomic can be applied to trivially copyable and standard-layout types,
+// enabling atomic operations on the whole memory block represented by the struct.
+// This approach allows atomic CAS without the need for an explicit 'operator==' !, 
+// as it directly compares the memory content, ensuring thread-safe modifications.
+struct DeferredVectorNodeHandle {
     std::vector<int>* pointer;
     long              refCount;
 };//__attribute__((aligned(16), packed));
 // for some compilers alignment needed to stop std::atomic<Pair>::load to segfault
 
+
 class LFSV {
-    std::atomic<Pair> mPtrData;
+    std::atomic<DeferredVectorNodeHandle> mPtrData;
     MemoryBank& mRefMemoryBank;
     GarbageRemover& mRefRemover;
 
 public:
-
     LFSV(MemoryBank& bank, GarbageRemover& remover);
     ~LFSV();
 

@@ -22,6 +22,8 @@ std::vector<int>* MemoryBank::Acquire() {
 
 void MemoryBank::Release(std::vector<int>* vec) {
     std::lock_guard<std::mutex> lock(mMutex);
-    vec->clear(); // reset the vector for reuse
-    mPool.push_back(vec);
+    if (vec != nullptr) {
+        vec->clear(); // reset the vector for reuse only if it's not nullptr
+        mPool.push_back(vec);
+    }
 }
