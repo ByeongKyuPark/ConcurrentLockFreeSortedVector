@@ -9,7 +9,7 @@ LFSV::LFSV(MemoryBank& bank, GarbageRemover& remover, std::vector<int> initialDa
     : mRefMemoryBank(bank), mRefRemover(remover) {
 
     // sort the initialData using Concurrent Quick Sort
-    Quicksort(initialData.data(), 0, initialData.size(), 8);
+    Quicksort(initialData.data(), 0, initialData.size(), 2);
 
     auto* sortedVector = mRefMemoryBank.Acquire();
     *sortedVector = std::move(initialData);

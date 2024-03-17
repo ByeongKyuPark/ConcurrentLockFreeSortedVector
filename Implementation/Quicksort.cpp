@@ -22,28 +22,6 @@ unsigned Partition(T* a, unsigned begin, unsigned end) {
     return i;
 }
 
-template< typename T>
-unsigned PartitionNew(T* a, unsigned begin, unsigned end) {
-    if (end - begin > 8) return partition_old(a, begin, end);
-
-    unsigned i = begin, last = end - 1, step = (end - begin) / 4;
-
-    T* pivots[5] = { a + begin, a + begin + step, a + begin + 2 * step, a + begin + 3 * step, a + last };
-    quicksort_base_5_pointers(pivots);
-
-    std::swap(a[last], a[begin + 2 * step]);
-    T pivot = a[last];
-
-    for (unsigned j = begin; j < last; ++j) {
-        if (a[j] < pivot /*|| a[j]==pivot*/) {
-            std::swap(a[j], a[i]);
-            ++i;
-        }
-    }
-    std::swap(a[i], a[last]);
-    return i;
-}
-
 /* recursive */
 template< typename T>
 void QuicksortRec(T* a, unsigned begin, unsigned end)
@@ -111,15 +89,16 @@ template <typename T>
 class ThreadSafeContainer {
 public:
 
-    ThreadSafeContainer(unsigned N_, int num_threads_ = 1) : mContainer{}, mMtx{}, mCond{}, countSortedElems{}, N{ N_ }, numThreads{ num_threads_ } {
-    }
-    void push(const Triple<T>& range) {
+    ThreadSafeContainer(unsigned n, int num_threads = 1) : mContainer{}, mMtx{}, mCond{}, mCountSortedElems{}, N{ n }, mNumThreads{ num_threads } 
+    {}
+
+    void Push(const Triple<T>& range) {
         std::unique_lock<std::mutex> lock(mMtx);
         mContainer.PUSH(range);
         mCond.notify_one();
     }
 
-    Triple<T> pop() {
+    Triple<T> Pop() {
         std::unique_lock<std::mutex> lock(mMtx);
         mCond.wait(lock, [&] {
             return !mContainer.empty();
@@ -129,14 +108,14 @@ public:
         return range;
     }
 
-    bool empty() const {
+    bool IsEmpty() const {
         std::unique_lock<std::mutex> lock(mMtx);
         return mContainer.empty();
     }
 
-    void wakeup_all() {
-        for (int i{ 1 }; i < numThreads; ++i) {
-            push(std::make_pair(nullptr, std::make_pair(0, 0)));
+    void WakeupAll() {
+        for (int i{ 1 }; i < mNumThreads; ++i) {
+            Push(std::make_pair(nullptr, std::make_pair(0, 0)));
         }
         mCond.notify_all();
     }
@@ -146,9 +125,9 @@ private:
     mutable std::mutex mMtx;
     std::condition_variable mCond;
 
-    std::atomic<unsigned> countSortedElems;
+    std::atomic<unsigned> mCountSortedElems;
+    int mNumThreads;
     unsigned N;
-    int numThreads;
 
     template <typename U>
     friend void QuicksortIterativeAux(ThreadSafeContainer<U>& bag);
@@ -156,12 +135,6 @@ private:
 
 template< typename T>
 void QuicksortIterativeAux(ThreadSafeContainer<T>& bag);
-
-template< typename T>
-void QuicksortIterative(T* a, unsigned begin, unsigned end)
-{
-    //empty for now 
-}
 
 template<typename T>
 void Quicksort(T* a, unsigned begin, unsigned end, int num_threads)
@@ -176,7 +149,7 @@ void Quicksort(T* a, unsigned begin, unsigned end, int num_threads)
     threads.reserve(num_threads);
 
     ThreadSafeContainer<T> bag(end - begin, num_threads);
-    bag.push(std::make_pair(a, std::make_pair(begin, end)));
+    bag.Push(std::make_pair(a, std::make_pair(begin, end)));
 
     for (int i = 0; i < num_threads; ++i) {
         threads.emplace_back([&bag]() {
@@ -193,14 +166,14 @@ void QuicksortIterativeAux(ThreadSafeContainer<T>& bag)
 {
     bool done{ false };
     while (!done) {
-        Triple<T> r = bag.pop();
+        Triple<T> r = bag.Pop();
 
         T* a = r.first;
         unsigned b = r.second.first;
         unsigned e = r.second.second;
 
         if (b == e) {
-            if (bag.countSortedElems == bag.N) {
+            if (bag.mCountSortedElems == bag.N) {
                 return;
             }
             continue;
@@ -208,30 +181,30 @@ void QuicksortIterativeAux(ThreadSafeContainer<T>& bag)
 
         if (e - b < 6) {
             switch (e - b) {
-            case 5: quicksort_base_5(a + b); bag.countSortedElems += 5; break;
-            case 4: quicksort_base_4(a + b); bag.countSortedElems += 4; break;
-            case 3: quicksort_base_3(a + b); bag.countSortedElems += 3; break;
-            case 2: quicksort_base_2(a + b); bag.countSortedElems += 2; break;
-            case 1: bag.countSortedElems++; break;
+            case 5: quicksort_base_5(a + b); bag.mCountSortedElems += 5; break;
+            case 4: quicksort_base_4(a + b); bag.mCountSortedElems += 4; break;
+            case 3: quicksort_base_3(a + b); bag.mCountSortedElems += 3; break;
+            case 2: quicksort_base_2(a + b); bag.mCountSortedElems += 2; break;
+            case 1: bag.mCountSortedElems++; break;
             }
-            if (bag.countSortedElems == bag.N) {
+            if (bag.mCountSortedElems == bag.N) {
                 done = true;
-                bag.wakeup_all();
+                bag.WakeupAll();
                 return;
             }
             continue;
         }
 
         unsigned q = Partition(a, b, e);
-        bag.countSortedElems++;
+        bag.mCountSortedElems++;
 
-        if (bag.countSortedElems == bag.N) {
+        if (bag.mCountSortedElems == bag.N) {
             done = true;
-            bag.wakeup_all();
+            bag.WakeupAll();
             return;
         }
 
-        bag.push(std::make_pair(a, std::make_pair(b, q)));
-        bag.push(std::make_pair(a, std::make_pair(q + 1, e)));
+        bag.Push(std::make_pair(a, std::make_pair(b, q)));
+        bag.Push(std::make_pair(a, std::make_pair(q + 1, e)));
     }
 }
