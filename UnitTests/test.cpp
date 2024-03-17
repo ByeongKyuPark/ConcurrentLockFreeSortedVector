@@ -4,7 +4,7 @@
 #include <thread>
 #include <random>
 #include "MemoryBank.h"
-#include "LFSV.h"
+#include "ConcurrentSortedVector.h"
 #include "Quicksort.h"
 
 TEST(MemoryBankTest, AcquireReturnsValidPointer) {
@@ -120,48 +120,48 @@ TEST(QuickSortTest, SortsLargeRandomArray) {
 }
 
 
-TEST(LFSVTest, InsertAndRetrieve) {
+TEST(ConcurrentSortedVectorTest, InsertAndRetrieve) {
     MemoryBank bank(10);
     GarbageRemover remover(bank);
-    LFSV lfsv(bank, remover);
+    ConcurrentSortedVector concurrentSortedVector(bank, remover);
 
-    lfsv.Insert(5);
-    ASSERT_EQ(lfsv[0], 5);
+    concurrentSortedVector.Insert(5);
+    ASSERT_EQ(concurrentSortedVector[0], 5);
 
-    lfsv.Insert(3);
+    concurrentSortedVector.Insert(3);
     // since new elements are inserted in a sorted manner, 
     // check if the elements are in the expected positions after insertion.
-    ASSERT_EQ(lfsv[0], 3); // the smaller element should be first.
-    ASSERT_EQ(lfsv[1], 5); // the larger element should be second.
+    ASSERT_EQ(concurrentSortedVector[0], 3); // the smaller element should be first.
+    ASSERT_EQ(concurrentSortedVector[1], 5); // the larger element should be second.
 }
 
-TEST(LFSVTest, HandleLargeNumberOfInserts) {
+TEST(ConcurrentSortedVectorTest, HandleLargeNumberOfInserts) {
     MemoryBank bank(1000);
     GarbageRemover remover(bank);
-    LFSV lfsv(bank, remover);
+    ConcurrentSortedVector concurrentSortedVector(bank, remover);
 
     int N = 50000; // number of inserts
     for (int i = N; i > 0; --i) {
-        lfsv.Insert(i);
+        concurrentSortedVector.Insert(i);
     }
 
     // verify that elements are sorted
     for (int i = 0; i < N; ++i) {
-        ASSERT_EQ(i + 1, lfsv[i]);
+        ASSERT_EQ(i + 1, concurrentSortedVector[i]);
     }
 }
 
-TEST(LFSVTest, ConcurrentInserts) {
+TEST(ConcurrentSortedVectorTest, ConcurrentInserts) {
     MemoryBank bank(500);
     GarbageRemover remover(bank);
-    LFSV lfsv(bank, remover);
+    ConcurrentSortedVector concurrentSortedVector(bank, remover);
 
     std::vector<std::thread> threads;
     int N = 10000; // number of elements to insert
 
     for (int i = 0; i < N; ++i) {
-        threads.emplace_back([&lfsv, i]() {
-            lfsv.Insert(i);
+        threads.emplace_back([&concurrentSortedVector, i]() {
+            concurrentSortedVector.Insert(i);
             });
     }
 
@@ -171,6 +171,6 @@ TEST(LFSVTest, ConcurrentInserts) {
 
     // verify elements are sorted after concurrent inserts
     for (int i = 0; i < N; ++i) {
-        ASSERT_EQ(i, lfsv[i]);
+        ASSERT_EQ(i, concurrentSortedVector[i]);
     }
 }

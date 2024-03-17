@@ -26,10 +26,10 @@ constexpr int MEMORY_BANK_SIZE = 100000;
 std::atomic<bool> doread(true);
 
 void GenerateTestData(std::vector<Ratio>& data);
-void ReadPosition0(LFSV& lfsv);
+void ReadPosition0(ConcurrentSortedVector& lfsv);
 void RWTest(int num_threads, int num_per_thread);
 void ConcurrentReadWriteTest();
-void InsertRange(LFSV& lfsv, int b, int e);
+void InsertRange(ConcurrentSortedVector& lfsv, int b, int e);
 
 void QuickSortPerformanceTest(const std::vector<Ratio>& originalTestData);
 void StdSortPerformanceTest(const std::vector<Ratio>& originalTestData);
@@ -65,7 +65,7 @@ void RWTest(int num_threads, int num_per_thread)
     MemoryBank bank(MEMORY_BANK_SIZE);
     GarbageRemover remover(bank);
 
-    LFSV lfsv(bank, remover);
+    ConcurrentSortedVector lfsv(bank, remover);
 
     std::vector<std::thread> threads;
     lfsv.Insert(-1);//for ReadPosition0
@@ -87,7 +87,7 @@ void RWTest(int num_threads, int num_per_thread)
     }
     std::cout << "All sorted!\n";
 }
-void ReadPosition0(LFSV& lfsv) {
+void ReadPosition0(ConcurrentSortedVector& lfsv) {
     int c = 0;
     while (doread.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -97,7 +97,7 @@ void ReadPosition0(LFSV& lfsv) {
         ++c;
     }
 }
-void InsertRange(LFSV& lfsv, int b, int e) {
+void InsertRange(ConcurrentSortedVector& lfsv, int b, int e) {
     int* range = new int[e - b];
     for (int i = b; i < e; ++i) {
         range[i - b] = i;

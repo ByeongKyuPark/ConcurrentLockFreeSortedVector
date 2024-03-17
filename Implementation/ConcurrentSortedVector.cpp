@@ -1,11 +1,10 @@
 #include "ConcurrentSortedVector.h"
 #include "Quicksort.h"
-
-LFSV::LFSV(MemoryBank& bank, GarbageRemover& remover) : mPtrData({ bank.Acquire(), 1 }), mRefMemoryBank(bank), mRefRemover(remover)
+ConcurrentSortedVector::ConcurrentSortedVector(MemoryBank& bank, GarbageRemover& remover) : mPtrData({ bank.Acquire(), 1 }), mRefMemoryBank(bank), mRefRemover(remover)
 {}
 
 // Constructor for LFSV with bulk data initialization
-LFSV::LFSV(MemoryBank& bank, GarbageRemover& remover, std::vector<int> initialData)
+ConcurrentSortedVector::ConcurrentSortedVector(MemoryBank& bank, GarbageRemover& remover, std::vector<int> initialData)
     : mRefMemoryBank(bank), mRefRemover(remover) {
 
     // sort the initialData using Concurrent Quick Sort
@@ -17,12 +16,12 @@ LFSV::LFSV(MemoryBank& bank, GarbageRemover& remover, std::vector<int> initialDa
     mPtrData.store(DeferredVectorNodeHandle{ sortedVector, 1 });
 }
 
-LFSV::~LFSV() {
+ConcurrentSortedVector::~ConcurrentSortedVector() {
     auto data = mPtrData.load().pointer;
     mRefRemover.ScheduleForDeletion(data); // schedule the final vector for deletion
 }
 
-void LFSV::Insert(int const& v) {
+void ConcurrentSortedVector::Insert(int const& v) {
     DeferredVectorNodeHandle oldData = mPtrData.load();
     while (true) {
         DeferredVectorNodeHandle newData{ mRefMemoryBank.Acquire(), 1 };
@@ -41,7 +40,7 @@ void LFSV::Insert(int const& v) {
     }
 }
 
-int LFSV::operator[] (int pos) { // not a const method
+int ConcurrentSortedVector::operator[] (int pos) { // not a const method
     DeferredVectorNodeHandle pdata_new, pdata_old;
     do { // before read - increment counter, use CAS
         pdata_old = mPtrData.load();

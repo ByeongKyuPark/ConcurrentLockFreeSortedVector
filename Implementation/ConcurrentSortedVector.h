@@ -21,15 +21,15 @@ struct DeferredVectorNodeHandle {
 // for some compilers alignment needed to stop std::atomic<Pair>::load to segfault
 
 
-class LFSV {
+class ConcurrentSortedVector {
     std::atomic<DeferredVectorNodeHandle> mPtrData;
     MemoryBank& mRefMemoryBank;
     GarbageRemover& mRefRemover;
 
 public:
-    LFSV(MemoryBank& bank, GarbageRemover& remover);
-    LFSV(MemoryBank& bank, GarbageRemover& remover, std::vector<int> initialData);
-    ~LFSV();
+    ConcurrentSortedVector(MemoryBank& bank, GarbageRemover& remover);
+    ConcurrentSortedVector(MemoryBank& bank, GarbageRemover& remover, std::vector<int> initialData);
+    ~ConcurrentSortedVector();
 
     void Insert(const int& v);
     int operator[] (int pos);
