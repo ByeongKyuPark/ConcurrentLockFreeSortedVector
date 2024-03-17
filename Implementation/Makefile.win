@@ -1,10 +1,10 @@
-PRG=ConcurrentLFSVTest.exe
+PRG=Implementation.exe
 
 GCC=g++
-GCCFLAGS=-O3 -Wall -Wextra -std=c++17 -latomic -mcx16
+GCCFLAGS=-O3 -Wall -Wextra -std=c++11 -latomic -mcx16
 
-OBJECTS=driver.o GarbageRemover.o lfsv.o MemoryBank.o
-SOURCES=driver.cpp GarbageRemover.cpp lfsv.cpp MemoryBank.cpp
+OBJECTS=driver.o GarbageRemover.o LFSV.o MemoryBank.o
+SOURCES=driver.cpp GarbageRemover.cpp LFSV.cpp MemoryBank.cpp
 
 all: $(PRG)
 

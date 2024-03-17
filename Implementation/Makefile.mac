@@ -1,6 +1,6 @@
 CXX=clang++
 CXXFLAGS=-Wall -Wextra -std=c++11 -mcx16
-OBJECTS=driver.o GarbageRemover.o lfsv.o MemoryBank.o
+OBJECTS=driver.o GarbageRemover.o LFSV.o MemoryBank.o
 EXECUTABLE=ConcurrentLFSVTest
 
 all: $(EXECUTABLE)
