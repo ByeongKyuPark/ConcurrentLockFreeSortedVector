@@ -1,0 +1,22 @@
+<meorybank.acquire()>
+memory bank에 남아있으면 pop back. 없으면 new로 slot 생성.
+
+CAS - X
+	memory bank의 "뒤"에서 다시 넣는다. //locality를 위해
+CAS - O
+	ABA때문에 bank에 바로 못 넣음.
+	grabage remover가 delay 이후 old memory를 delete하는게아니라
+	 memory bank에 추가.
+
+// 근데 이럴거면  parallel stack을 쓰지?
+
+<refCount>
+new head의 count는 항상 1로 생성된다. 
+그래야 (current head랑 new head의 메모리 주소는당연히 같고) 
+count가 1일때 swap이 일어난다. 2,3, ...이면 operator[]에서 읽고있는 중이라서 swap안됨. 
+
+질문. 근데 현재 head에 thread 여러개(e.g.,10개)가 동시에 insert중이면, cnt가 전부 1인데 어케 중복방지?
+: cas 특성이 atomic이다. 10개중에 1빠따로 swap하는 녀석만 성공하는거다.
+swap되는 순간 vector<>* 값이 업데이트되서 ref count가 아니라 메모리 주소가달라져서
+나머지 9개는 insert 안됨. 어차피 새로 작업돌려야된다.
+
