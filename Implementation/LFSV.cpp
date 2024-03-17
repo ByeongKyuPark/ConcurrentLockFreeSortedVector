@@ -1,7 +1,21 @@
 #include "lfsv.h"
+#include "Quicksort.h"
 
 LFSV::LFSV(MemoryBank& bank, GarbageRemover& remover) : mPtrData({ bank.Acquire(), 1 }), mRefMemoryBank(bank), mRefRemover(remover)
 {}
+
+// Constructor for LFSV with bulk data initialization
+LFSV::LFSV(MemoryBank& bank, GarbageRemover& remover, std::vector<int> initialData)
+    : mRefMemoryBank(bank), mRefRemover(remover) {
+
+    // sort the initialData using Concurrent Quick Sort
+    Quicksort(initialData.data(), 0, initialData.size(), 8);
+
+    auto* sortedVector = mRefMemoryBank.Acquire();
+    *sortedVector = std::move(initialData);
+
+    mPtrData.store(DeferredVectorNodeHandle{ sortedVector, 1 });
+}
 
 LFSV::~LFSV() {
     auto data = mPtrData.load().pointer;

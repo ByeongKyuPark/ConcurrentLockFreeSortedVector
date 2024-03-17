@@ -2,8 +2,10 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include <thread>
+#include <random>
 #include "MemoryBank.h"
 #include "LFSV.h"
+#include "Quicksort.h"
 
 TEST(MemoryBankTest, AcquireReturnsValidPointer) {
     MemoryBank bank(1);
@@ -99,6 +101,24 @@ TEST(MemoryBankTest, ConcurrentAcquireAndRelease) {
     auto last = std::unique(acquiredVectors.begin(), acquiredVectors.end());
     ASSERT_EQ(last, acquiredVectors.end()); // fail if duplicates are found
 }
+
+TEST(QuickSortTest, SortsLargeRandomArray) {
+    std::vector<int> data(500000);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distrib(-100000, 100000);
+
+    for (auto& elem : data) {
+        elem = distrib(gen);
+    }
+
+    // sort the data using Quick Sort
+    Quicksort(data.data(), 0, data.size(), 8);
+
+    // Verify the data is sorted
+    ASSERT_TRUE(std::is_sorted(data.begin(), data.end()));
+}
+
 
 TEST(LFSVTest, InsertAndRetrieve) {
     MemoryBank bank(10);

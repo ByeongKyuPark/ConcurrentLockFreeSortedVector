@@ -130,11 +130,14 @@
     <ClCompile Include="GarbageRemover.cpp" />
     <ClCompile Include="LFSV.cpp" />
     <ClCompile Include="MemoryBank.cpp" />
+    <ClCompile Include="Quicksort.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GarbageRemover.h" />
     <ClInclude Include="LFSV.h" />
     <ClInclude Include="MemoryBank.h" />
+    <ClInclude Include="Quicksort.h" />
+    <ClInclude Include="SortSmallArrays.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

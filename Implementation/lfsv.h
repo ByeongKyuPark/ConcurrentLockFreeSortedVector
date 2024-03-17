@@ -28,6 +28,7 @@ class LFSV {
 
 public:
     LFSV(MemoryBank& bank, GarbageRemover& remover);
+    LFSV(MemoryBank& bank, GarbageRemover& remover, std::vector<int> initialData);
     ~LFSV();
 
     void Insert(const int& v);
