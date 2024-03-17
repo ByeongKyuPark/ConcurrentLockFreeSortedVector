@@ -8,7 +8,7 @@
 #include "Quicksort.h"
 
 TEST(MemoryBankTest, AcquireReturnsValidPointer) {
-    MemoryBank bank(1);
+    MemoryBank<int> bank(1);
     auto* vec1 = bank.Acquire(); 
     ASSERT_NE(vec1, nullptr);
     bank.Release(vec1); // clean up
@@ -19,14 +19,14 @@ TEST(MemoryBankTest, AcquireReturnsValidPointer) {
 }
 
 TEST(MemoryBankTest, ReleaseNullptrDoesNotCrash) {
-    MemoryBank bank(10);
+    MemoryBank<int> bank(10);
     std::vector<int>* vec = nullptr;
     EXPECT_NO_THROW(bank.Release(vec)); // ensure releasing nullptr is safe
 }
 
 TEST(MemoryBankTest, ReleaseHandlesNullptrWithoutAffectingPool) {
     constexpr int BANK_SIZE = 5;
-    MemoryBank bank(BANK_SIZE);
+    MemoryBank<int> bank(BANK_SIZE);
 
     // initially acquire all vectors to deplete the pool
     std::vector<std::vector<int>*> acquiredVectors;
@@ -65,7 +65,7 @@ TEST(MemoryBankTest, ReleaseHandlesNullptrWithoutAffectingPool) {
 
 
 TEST(MemoryBankTest, AcquireExhaustsPool) {
-    MemoryBank bank(1); // pool size of 1 for test
+    MemoryBank<int> bank(1); // pool size of 1 for test
     auto* firstVec = bank.Acquire();
     ASSERT_NE(nullptr, firstVec);
 
@@ -78,7 +78,7 @@ TEST(MemoryBankTest, AcquireExhaustsPool) {
 }
 
 TEST(MemoryBankTest, ConcurrentAcquireAndRelease) {
-    MemoryBank bank(10); //pool for concurrency test
+    MemoryBank<int> bank(10); //pool for concurrency test
     std::vector<std::vector<int>*> acquiredVectors(20, nullptr);
     std::vector<std::thread> threads;
 
@@ -121,9 +121,9 @@ TEST(QuickSortTest, SortsLargeRandomArray) {
 
 
 TEST(ConcurrentSortedVectorTest, InsertAndRetrieve) {
-    MemoryBank bank(10);
-    GarbageRemover remover(bank);
-    ConcurrentSortedVector concurrentSortedVector(bank, remover);
+    MemoryBank<int> bank(10);
+    GarbageRemover<int> remover(bank);
+    ConcurrentSortedVector<int> concurrentSortedVector(bank, remover);
 
     concurrentSortedVector.Insert(5);
     ASSERT_EQ(concurrentSortedVector[0], 5);
@@ -136,9 +136,9 @@ TEST(ConcurrentSortedVectorTest, InsertAndRetrieve) {
 }
 
 TEST(ConcurrentSortedVectorTest, HandleLargeNumberOfInserts) {
-    MemoryBank bank(1000);
-    GarbageRemover remover(bank);
-    ConcurrentSortedVector concurrentSortedVector(bank, remover);
+    MemoryBank<int> bank(1000);
+    GarbageRemover<int> remover(bank);
+    ConcurrentSortedVector<int> concurrentSortedVector(bank, remover);
 
     int N = 50000; // number of inserts
     for (int i = N; i > 0; --i) {
@@ -152,9 +152,9 @@ TEST(ConcurrentSortedVectorTest, HandleLargeNumberOfInserts) {
 }
 
 TEST(ConcurrentSortedVectorTest, ConcurrentInserts) {
-    MemoryBank bank(500);
-    GarbageRemover remover(bank);
-    ConcurrentSortedVector concurrentSortedVector(bank, remover);
+    MemoryBank<int> bank(500);
+    GarbageRemover<int> remover(bank);
+    ConcurrentSortedVector<int> concurrentSortedVector(bank, remover);
 
     std::vector<std::thread> threads;
     int N = 10000; // number of elements to insert
