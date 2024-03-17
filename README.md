@@ -12,7 +12,7 @@ This project introduces a concurrent sorted vector designed to support efficient
 
 #### Quick Sort with Bag of Tasks
 
-The parallel Quick Sort algorithm leverages a "bag of tasks" model to distribute sorting work among multiple threads, which is essential for reducing completion time and optimizing CPU usage. Here's a simplified version of the Quick Sort implementation:
+The parallel Quick Sort algorithm leverages a "bag of tasks" model to distribute sorting work among multiple threads, which is essential for reducing completion time and optimizing CPU usage. 
 
 ```cpp
 template<typename T>
@@ -38,6 +38,10 @@ void Quicksort(T* a, unsigned begin, unsigned end, int num_threads) {
 
 Efficient memory management and thread safety are achieved through a combination of thread-local caching for insert operations and atomic operations for managing shared data integrity, ensuring optimal performance even under high concurrency.
 
+#### Atomic Operations and Compare-And-Swap (CAS)
+
+The project extensively uses atomic operations and the CAS technique for managing the vector's state without traditional locking mechanisms. This atomic-based approach is crucial for the lock-free insertion process, addressing the ABA problem and ensuring data consistency among concurrent threads.
+
 ### The Role of the Ratio Class
 
 The `Ratio` class, equipped with built-in delays for comparison operations, plays a crucial role in evaluating the sorting algorithm's time complexity and performance. This class mimics the computational load of real-world scenarios, offering a controlled benchmark that accurately reflects the vector's capabilities in handling complex operations efficiently.
@@ -53,4 +57,4 @@ This vector is exceptionally suited for:
 
 ### Conclusion
 
-The concurrent sorted vector, with its parallel Quick Sort implementation and the strategic use of the Ratio class for precise performance measurement, represents a significant advancement in the field of high-performance computing. This project illustrates the potential for modern C++ to enhance data structure performance, particularly in applications that demand fast, concurrent processing of data.
+The concurrent sorted vector, with its parallel Quick Sort implementation and sophisticated thread safety mechanisms, represents a significant advancement in the field of high-performance computing. This project illustrates the potential for modern C++ to enhance data structure performance, particularly in applications that demand fast, concurrent processing of data.
