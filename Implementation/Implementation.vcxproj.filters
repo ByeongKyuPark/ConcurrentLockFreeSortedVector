@@ -4,7 +4,7 @@
     <ClCompile Include="GarbageRemover.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LFSV.cpp">
+    <ClCompile Include="ConcurrentSortedVector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MemoryBank.cpp">
@@ -18,7 +18,7 @@
     <ClInclude Include="GarbageRemover.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LFSV.h">
+    <ClInclude Include="ConcurrentSortedVector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MemoryBank.h">

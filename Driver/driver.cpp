@@ -3,88 +3,45 @@
 #include <algorithm>//copy, random_shuffle
 #include <ctime>    //std::time (NULL) to seed srand
 #include <functional> // std::bind
-#include <cstdio> //sscanf
 #include <iostream>
 #include <vector>
 #include <thread>
 #include <random>
 #include <chrono>
 #include <cassert>
-#include "LFSV.h"
+#include "ConcurrentSortedVector.h"
 #include "Quicksort.h"
-#include "driver.h"
+#include "Ratio.h"
 
-constexpr int DATA_SIZE = 5000000;
-constexpr int MEMORY_BANK_SIZE = 100000;
+//-------------------------------------------------------------
 const std::vector<int> threadCounts = { 1,2,3,4,5,6,7,8, 16 };
 
-void GenerateTestData(std::vector<int>& data) {
-    std::mt19937 gen(std::random_device{}());
-    std::uniform_int_distribution<int> dist(1, DATA_SIZE);
-    std::generate(data.begin(), data.end(), [&] { return dist(gen); });
-}
+//for the quick sort
+constexpr int RATIO_DATA_SIZE = 100;
+//for the concurrent vector
+constexpr int DATA_SIZE = 5000000;
+constexpr int MEMORY_BANK_SIZE = 100000;
+//-------------------------------------------------------------
 
 std::atomic<bool> doread(true);
 
+void GenerateTestData(std::vector<Ratio>& data);
 void ReadPosition0(LFSV& lfsv);
 void RWTest(int num_threads, int num_per_thread);
-void WTest(int num_threads, int num_per_thread);
 void ConcurrentReadWriteTest();
 void InsertRange(LFSV& lfsv, int b, int e);
 
-void QuickSortPerformanceTest(const std::vector<int>& originalTestData) {
-    std::cout << "Starting Quick Sort Performance Evaluation" << std::endl;
-
-    for (int threads : threadCounts) {
-        // Copy testData from the original to ensure the same data for each test
-        std::vector<int> testData = originalTestData;
-
-        // Measure the time taken to sort the array using Quick Sort with the specified number of threads.
-        auto startTime = std::chrono::high_resolution_clock::now();
-
-        Quicksort(testData.data(), 0, testData.size(), threads); // Assuming this is your Quicksort function
-
-        auto endTime = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsedSeconds = endTime - startTime;
-        std::cout << "Quick Sort using " << threads << " threads sorted an array of " << DATA_SIZE
-            << " elements in " << elapsedSeconds.count() << " seconds." << std::endl;
-    }
-}
-
-void StdSortPerformanceTest(const std::vector<int>& originalTestData) {
-    std::cout << "Starting std::sort Performance Evaluation" << std::endl;
-
-    // Copy testData from the original to ensure the same data for each test
-    std::vector<int> testData = originalTestData;
-
-    auto startTime = std::chrono::high_resolution_clock::now();
-
-    std::sort(testData.begin(), testData.end()); // Using std::sort
-
-    auto endTime = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsedSeconds = endTime - startTime;
-    std::cout << "std::sort sorted an array of " << DATA_SIZE
-        << " elements in " << elapsedSeconds.count() << " seconds." << std::endl;
-}
+void QuickSortPerformanceTest(const std::vector<Ratio>& originalTestData);
+void StdSortPerformanceTest(const std::vector<Ratio>& originalTestData);
 
 int main(int /*argc*/, char** /*argv*/){
- //   if (argc==2) { //use test[ argv[1] ]
-	//	int test = 0;
-	//	std::sscanf(argv[1],"%i",&test);
-	//	try {
- //           pTests[test]();
-	//	} catch( const char* msg) {
-	//		std::cerr << msg << std::endl;
-	//	}
- //       return 0;
-	//}
     std::cout << "The number of logical cores = " << std::thread::hardware_concurrency() << "\n\n";
-    std::vector<int> testData(DATA_SIZE);
+    std::vector<Ratio> testData(RATIO_DATA_SIZE);
     GenerateTestData(testData);
 
     //(1) quicksort
-    QuickSortPerformanceTest(testData);
     StdSortPerformanceTest(testData);
+    QuickSortPerformanceTest(testData);
 
     //(2) LFSV
 	ConcurrentReadWriteTest();
@@ -92,7 +49,16 @@ int main(int /*argc*/, char** /*argv*/){
     return 0;
 }
 
+void GenerateTestData(std::vector<Ratio>& data) {
+    std::mt19937 gen(std::random_device{}());
+    std::uniform_int_distribution<int> dist(1, RATIO_DATA_SIZE);
 
+    for (auto& ratio : data) {
+        int n = dist(gen);
+        int d = dist(gen); 
+        ratio = Ratio(n, d);
+    }
+}
 
 void RWTest(int num_threads, int num_per_thread)
 {
@@ -120,43 +86,6 @@ void RWTest(int num_threads, int num_per_thread)
         }
     }
     std::cout << "All sorted!\n";
-}
-void WTest(int num_threads, int num_per_thread)
-{
-    MemoryBank bank(MEMORY_BANK_SIZE);
-    GarbageRemover remover(bank);
-
-    LFSV lfsv(bank, remover);
-
-
-    std::vector<std::thread> threads;
-
-    auto startTime = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < num_threads; ++i) {
-        threads.push_back(std::thread(InsertRange, std::ref(lfsv), i * num_per_thread, (i + 1) * num_per_thread));
-    }
-    for (auto& th : threads) th.join();
-    auto endTime = std::chrono::high_resolution_clock::now();
-
-    std::chrono::duration<double> elapsed = endTime - startTime;
-    std::cout << "Concurrent Write Test using " << num_threads << " thread(s) executed ()"
-        << DATA_SIZE << " operations in " << elapsed.count() << " seconds.\n";
-
-    bool isSorted = true;
-    for (int i = 0; i < num_threads * num_per_thread - 1; ++i) {
-        if (lfsv[i] > lfsv[i + 1]) {
-            isSorted = false;
-            break;
-        }
-    }
-
-    if (isSorted) {
-        std::cout << "All elements are correctly ordered.\n";
-    }
-    else {
-        std::cerr << "Error: Elements are not in the correct order.\n";
-        std::exit(EXIT_FAILURE);
-    }
 }
 void ReadPosition0(LFSV& lfsv) {
     int c = 0;
@@ -195,4 +124,39 @@ void ConcurrentReadWriteTest() {
             << DATA_SIZE << " operations in " << elapsed.count() << " seconds.\n";
     }
     std::cout << "Concurrent Read/Write Performance Evaluation Completed\n";
+}
+
+
+void QuickSortPerformanceTest(const std::vector<Ratio>& originalTestData) {
+    std::cout << "Starting Quick Sort Performance Evaluation" << std::endl;
+
+    for (int threads : threadCounts) {
+        // copy testData from the original to ensure the same data for each test
+        std::vector<Ratio> testData = originalTestData;
+
+        // measure the time taken to sort the array using Quick Sort with the specified number of threads.
+        auto startTime = std::chrono::high_resolution_clock::now();
+
+        Quicksort(testData.data(), 0, testData.size(), threads);
+
+        auto endTime = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsedSeconds = endTime - startTime;
+        std::cout << "Quick Sort using " << threads << " threads sorted an array of " << RATIO_DATA_SIZE
+            << " Ratios with delay in " << elapsedSeconds.count() << " seconds." << std::endl;
+    }
+}
+
+void StdSortPerformanceTest(const std::vector<Ratio>& originalTestData) {
+    std::cout << "Starting std::sort Performance Evaluation" << std::endl;
+
+    std::vector<Ratio> testData = originalTestData;
+
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    std::sort(testData.begin(), testData.end());
+    
+    auto endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsedSeconds = endTime - startTime;
+    std::cout << "std::sort sorted an array of " << RATIO_DATA_SIZE
+        << " Ratios with delay in " << elapsedSeconds.count() << " seconds." << std::endl;
 }

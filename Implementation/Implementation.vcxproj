@@ -128,13 +128,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="GarbageRemover.cpp" />
-    <ClCompile Include="LFSV.cpp" />
+    <ClCompile Include="ConcurrentSortedVector.cpp" />
     <ClCompile Include="MemoryBank.cpp" />
     <ClCompile Include="Quicksort.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GarbageRemover.h" />
-    <ClInclude Include="LFSV.h" />
+    <ClInclude Include="ConcurrentSortedVector.h" />
     <ClInclude Include="MemoryBank.h" />
     <ClInclude Include="Quicksort.h" />
     <ClInclude Include="SortSmallArrays.h" />

@@ -136,10 +136,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="driver.h" />
+    <ClCompile Include="driver.cpp" />
+    <ClCompile Include="Ratio.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="driver.cpp" />
+    <ClInclude Include="Ratio.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
