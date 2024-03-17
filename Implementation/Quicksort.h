@@ -5,4 +5,4 @@ void QuicksortRec( T* a, unsigned begin, unsigned end );
 template< typename T>
 void Quicksort(T* a, unsigned, unsigned, int);
 
-#include "Quicksort.cpp"
+#include "Quicksort.inl"

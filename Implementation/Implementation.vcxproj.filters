@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="GarbageRemover.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="GarbageRemover.inl">
+      <Filter>Header Files\inl</Filter>
     </ClCompile>
-    <ClCompile Include="ConcurrentSortedVector.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="MemoryBank.inl">
+      <Filter>Header Files\inl</Filter>
     </ClCompile>
-    <ClCompile Include="MemoryBank.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="ConcurrentSortedVector.inl">
+      <Filter>Header Files\inl</Filter>
     </ClCompile>
-    <ClCompile Include="Quicksort.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Quicksort.inl">
+      <Filter>Header Files\inl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -37,6 +37,9 @@
     </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{28cf7370-39c4-4dcc-afcb-8f673d657ec1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\inl">
+      <UniqueIdentifier>{77b42411-c361-4749-b3a3-28af2300f392}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -1,0 +1,45 @@
+The number of logical cores = 16
+
+Starting std::sort Performance Evaluation
+std::sort sorted an array of 100 Ratios with delay in 16.3723 seconds.
+Starting Quick Sort Performance Evaluation
+Quick Sort using 1 threads sorted an array of 100 Ratios with delay in 8.74074 seconds.
+
+Quick Sort using 2 threads sorted an array of 100 Ratios with delay in 5.28352 seconds.
+
+Quick Sort using 3 threads sorted an array of 100 Ratios with delay in 4.19269 seconds.
+
+Quick Sort using 4 threads sorted an array of 100 Ratios with delay in 3.90185 seconds.
+
+Quick Sort using 5 threads sorted an array of 100 Ratios with delay in 3.7741 seconds.
+
+Quick Sort using 6 threads sorted an array of 100 Ratios with delay in 3.76158 seconds.
+
+Quick Sort using 7 threads sorted an array of 100 Ratios with delay in 3.75904 seconds.
+
+Quick Sort using 8 threads sorted an array of 100 Ratios with delay in 3.77102 seconds.
+
+Quick Sort using 16 threads sorted an array of 100 Ratios with delay in 3.77779 seconds.
+
+The number of logical cores = 16
+
+Initiating Concurrent Read/Write Performance Evaluation
+Concurrent Read/Write Test using 1 thread(s) executed 50000 operations in 1.90929 seconds.
+All sorted!
+Concurrent Read/Write Test using 2 thread(s) executed 50000 operations in 1.31887 seconds.
+All sorted!
+Concurrent Read/Write Test using 3 thread(s) executed 50000 operations in 1.1779 seconds.
+All sorted!
+Concurrent Read/Write Test using 4 thread(s) executed 50000 operations in 1.19562 seconds.
+All sorted!
+Concurrent Read/Write Test using 5 thread(s) executed 50000 operations in 1.12647 seconds.
+All sorted!
+Concurrent Read/Write Test using 6 thread(s) executed 50000 operations in 1.18487 seconds.
+All sorted!
+Concurrent Read/Write Test using 7 thread(s) executed 50000 operations in 1.14016 seconds.
+All sorted!
+Concurrent Read/Write Test using 8 thread(s) executed 50000 operations in 1.27995 seconds.
+All sorted!
+Concurrent Read/Write Test using 16 thread(s) executed 50000 operations in 1.64836 seconds.
+All sorted!
+Concurrent Read/Write Performance Evaluation Completed

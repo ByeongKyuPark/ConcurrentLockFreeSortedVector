@@ -14,13 +14,13 @@
 #include "Ratio.h"
 
 //-------------------------------------------------------------
-const std::vector<int> threadCounts = { 1,2,3,4,5,6,7,8, 16 };
+const std::vector<int> Threads = { 1,2,3,4,5,6,7,8, 16 };
 
 //for the quick sort
 constexpr int RATIO_DATA_SIZE = 100;
 //for the concurrent vector
-constexpr int DATA_SIZE = 5000000;
-constexpr int MEMORY_BANK_SIZE = 100000;
+constexpr int DATA_SIZE = 50000;
+constexpr int MEMORY_BANK_SIZE = 1000;
 //-------------------------------------------------------------
 
 std::atomic<bool> doread(true);
@@ -40,8 +40,8 @@ int main(int /*argc*/, char** /*argv*/){
     GenerateTestData(testData);
 
     //(1) Concurrent Quicksort
-    StdSortPerformanceTest(testData);
-    QuickSortPerformanceTest(testData);
+    //StdSortPerformanceTest(testData);
+    //QuickSortPerformanceTest(testData);
 
     //(2) Concurrent SortedVector
 	ConcurrentReadWriteTest();
@@ -71,10 +71,17 @@ void RWTest(int num_threads, int num_per_thread)
     concurrentSortedVector.Insert(-1);//for ReadPosition0
     std::thread reader = std::thread(ReadPosition0, std::ref(concurrentSortedVector));
 
+    auto startTime = std::chrono::high_resolution_clock::now();
+
     for (int i = 0; i < num_threads; ++i) {
         threads.push_back(std::thread(InsertRange, std::ref(concurrentSortedVector), i * num_per_thread, (i + 1) * num_per_thread));
     }
     for (auto& th : threads) th.join();
+
+    auto endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = endTime - startTime;
+    std::cout << "Concurrent Read/Write Test using " << num_threads << " thread(s) executed "
+        << DATA_SIZE << " operations in " << elapsed.count() << " seconds.\n";
 
     doread.store(false);
     reader.join();
@@ -113,15 +120,8 @@ void InsertRange(ConcurrentSortedVector<int>& concurrentSortedVector, int b, int
 void ConcurrentReadWriteTest() {
     std::cout << "Initiating Concurrent Read/Write Performance Evaluation\n";
 
-    for (int threadCount : threadCounts) {
-        auto startTime = std::chrono::high_resolution_clock::now();
-
+    for (int threadCount : Threads) {
         RWTest(threadCount, DATA_SIZE / threadCount);
-
-        auto endTime = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = endTime - startTime;
-        std::cout << "Concurrent Read/Write Test using " << threadCount << " thread(s) executed ()"
-            << DATA_SIZE << " operations in " << elapsed.count() << " seconds.\n";
     }
     std::cout << "Concurrent Read/Write Performance Evaluation Completed\n";
 }
@@ -130,7 +130,7 @@ void ConcurrentReadWriteTest() {
 void QuickSortPerformanceTest(const std::vector<Ratio>& originalTestData) {
     std::cout << "Starting Quick Sort Performance Evaluation" << std::endl;
 
-    for (int threads : threadCounts) {
+    for (int threads : Threads) {
         // copy testData from the original to ensure the same data for each test
         std::vector<Ratio> testData = originalTestData;
 
@@ -142,7 +142,7 @@ void QuickSortPerformanceTest(const std::vector<Ratio>& originalTestData) {
         auto endTime = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsedSeconds = endTime - startTime;
         std::cout << "Quick Sort using " << threads << " threads sorted an array of " << RATIO_DATA_SIZE
-            << " Ratios with delay in " << elapsedSeconds.count() << " seconds." << std::endl;
+            << " Ratios with delay in " << elapsedSeconds.count() << " seconds.\n" << std::endl;
     }
 }
 

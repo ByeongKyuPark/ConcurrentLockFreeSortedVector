@@ -1,6 +1,6 @@
-#include "GarbageRemover.h"
 
-void GarbageRemover::Process() {
+template<typename T>
+void GarbageRemover<T>::Process() {
     while (!mStop) {
         std::unique_lock<std::mutex> lock(mMutex);
         mCond.wait(lock, [this] { return !mDelayedQueue.empty() || mStop; });
@@ -22,13 +22,15 @@ void GarbageRemover::Process() {
     }
 }
 
-GarbageRemover::~GarbageRemover() {
+template<typename T>
+GarbageRemover<T>::~GarbageRemover() {
     mStop = true;
     mCond.notify_one();
     mWorker.join();
 }
 
-void GarbageRemover::ScheduleForDeletion(std::vector<int>* vec, const std::chrono::milliseconds& delay) {
+template<typename T>
+void GarbageRemover<T>::ScheduleForDeletion(std::vector<T>* vec, const std::chrono::milliseconds& delay) {
     std::lock_guard<std::mutex> lock(mMutex);
     mDelayedQueue.push({ vec, std::chrono::steady_clock::now() + delay });
     mCond.notify_one();
