@@ -1,36 +1,92 @@
 #pragma once
 
-#include <iostream>       // std::cout
-#include <atomic>         // std::atomic
-#include <thread>         // std::thread
-#include <vector>         // std::vector
-#include <deque>          // std::deque
-#include <mutex>          // std::mutex
+#include <iostream>
+#include <atomic>
+#include <thread>
+#include <vector>
+#include <deque>
+#include <mutex>
 #include "MemoryBank.h"
 #include "GarbageRemover.h"
 
-// 'DeferredVectorNodeHandle' is a POD struct used with std::atomic for compare-and-swap (CAS) operations.
-// In C++11 onwards, std::atomic can be applied to trivially copyable and standard-layout types,
-// enabling atomic operations on the whole memory block represented by the struct.
-// This approach allows atomic CAS without the need for an explicit 'operator==' !, 
-// as it directly compares the memory content, ensuring thread-safe modifications.
-struct DeferredVectorNodeHandle {
-    std::vector<int>* pointer;
-    long              refCount;
-};//__attribute__((aligned(16), packed));
-// for some compilers alignment needed to stop std::atomic<Pair>::load to segfault
-
-
+template<typename T>
 class ConcurrentSortedVector {
+    struct DeferredVectorNodeHandle {
+        std::vector<T>* pointer;
+        long refCount;
+    };
+
     std::atomic<DeferredVectorNodeHandle> mPtrData;
-    MemoryBank& mRefMemoryBank;
-    GarbageRemover& mRefRemover;
+    MemoryBank<T>& mRefMemoryBank;
+    GarbageRemover<T>& mRefRemover;
 
 public:
-    ConcurrentSortedVector(MemoryBank& bank, GarbageRemover& remover);
-    ConcurrentSortedVector(MemoryBank& bank, GarbageRemover& remover, std::vector<int> initialData);
+    ConcurrentSortedVector(MemoryBank<T>& bank, GarbageRemover<T>& remover);
+    ConcurrentSortedVector(MemoryBank<T>& bank, GarbageRemover<T>& remover, std::vector<T> initialData);
     ~ConcurrentSortedVector();
 
-    void Insert(const int& v);
-    int operator[] (int pos);
+    void Insert(const T& v);
+    T operator[](int pos);
 };
+
+template<typename T>
+ConcurrentSortedVector<T>::ConcurrentSortedVector(MemoryBank<T>& bank, GarbageRemover<T>& remover)
+    : mPtrData({ bank.Acquire(), 1 }), mRefMemoryBank(bank), mRefRemover(remover)
+{}
+
+template<typename T>
+ConcurrentSortedVector<T>::ConcurrentSortedVector(MemoryBank<T>& bank, GarbageRemover<T>& remover, std::vector<T> initialData)
+    : mRefMemoryBank(bank), mRefRemover(remover) {
+
+    Quicksort(initialData.data(), 0, initialData.size(), 2);
+
+    auto* sortedVector = mRefMemoryBank.Acquire();
+    *sortedVector = std::move(initialData);
+
+    mPtrData.store(DeferredVectorNodeHandle{ sortedVector, 1 });
+}
+
+template<typename T>
+ConcurrentSortedVector<T>::~ConcurrentSortedVector() {
+    auto data = mPtrData.load().pointer;
+    mRefRemover.ScheduleForDeletion(data);
+}
+
+template<typename T>
+void ConcurrentSortedVector<T>::Insert(const T& v) {
+    DeferredVectorNodeHandle oldData = mPtrData.load();
+    while (true) {
+        DeferredVectorNodeHandle newData{ mRefMemoryBank.Acquire(), 1 };
+        *newData.pointer = *oldData.pointer;
+        auto it = std::lower_bound(newData.pointer->begin(), newData.pointer->end(), v);
+        newData.pointer->insert(it, v);
+
+        if (mPtrData.compare_exchange_weak(oldData, newData)) {
+            mRefRemover.ScheduleForDeletion(oldData.pointer);
+            break;
+        }
+        else {
+            mRefMemoryBank.Release(newData.pointer);
+        }
+    }
+}
+
+template<typename T>
+T ConcurrentSortedVector<T>::operator[](int pos) {
+    DeferredVectorNodeHandle pdata_new, pdata_old;
+    do {
+        pdata_old = mPtrData.load();
+        pdata_new = pdata_old;
+        ++pdata_new.refCount;
+    } while (!(this->mPtrData).compare_exchange_weak(pdata_old, pdata_new));
+
+    T ret_val = (*pdata_new.pointer)[pos];
+
+    do {
+        pdata_old = mPtrData.load();
+        pdata_new = pdata_old;
+        --pdata_new.refCount;
+    } while (!(this->mPtrData).compare_exchange_weak(pdata_old, pdata_new));
+
+    return ret_val;
+}

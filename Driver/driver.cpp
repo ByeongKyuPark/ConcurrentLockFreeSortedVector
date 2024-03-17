@@ -26,10 +26,10 @@ constexpr int MEMORY_BANK_SIZE = 100000;
 std::atomic<bool> doread(true);
 
 void GenerateTestData(std::vector<Ratio>& data);
-void ReadPosition0(ConcurrentSortedVector& lfsv);
+void ReadPosition0(ConcurrentSortedVector<int>& concurrentSortedVector);
 void RWTest(int num_threads, int num_per_thread);
 void ConcurrentReadWriteTest();
-void InsertRange(ConcurrentSortedVector& lfsv, int b, int e);
+void InsertRange(ConcurrentSortedVector<int>& concurrentSortedVector, int b, int e);
 
 void QuickSortPerformanceTest(const std::vector<Ratio>& originalTestData);
 void StdSortPerformanceTest(const std::vector<Ratio>& originalTestData);
@@ -39,11 +39,11 @@ int main(int /*argc*/, char** /*argv*/){
     std::vector<Ratio> testData(RATIO_DATA_SIZE);
     GenerateTestData(testData);
 
-    //(1) quicksort
+    //(1) Concurrent Quicksort
     StdSortPerformanceTest(testData);
     QuickSortPerformanceTest(testData);
 
-    //(2) LFSV
+    //(2) Concurrent SortedVector
 	ConcurrentReadWriteTest();
 
     return 0;
@@ -62,17 +62,17 @@ void GenerateTestData(std::vector<Ratio>& data) {
 
 void RWTest(int num_threads, int num_per_thread)
 {
-    MemoryBank bank(MEMORY_BANK_SIZE);
-    GarbageRemover remover(bank);
+    MemoryBank<int> bank(MEMORY_BANK_SIZE);
+    GarbageRemover<int> remover(bank);
 
-    ConcurrentSortedVector lfsv(bank, remover);
+    ConcurrentSortedVector<int> concurrentSortedVector(bank, remover);
 
     std::vector<std::thread> threads;
-    lfsv.Insert(-1);//for ReadPosition0
-    std::thread reader = std::thread(ReadPosition0, std::ref(lfsv));
+    concurrentSortedVector.Insert(-1);//for ReadPosition0
+    std::thread reader = std::thread(ReadPosition0, std::ref(concurrentSortedVector));
 
     for (int i = 0; i < num_threads; ++i) {
-        threads.push_back(std::thread(InsertRange, std::ref(lfsv), i * num_per_thread, (i + 1) * num_per_thread));
+        threads.push_back(std::thread(InsertRange, std::ref(concurrentSortedVector), i * num_per_thread, (i + 1) * num_per_thread));
     }
     for (auto& th : threads) th.join();
 
@@ -80,24 +80,24 @@ void RWTest(int num_threads, int num_per_thread)
     reader.join();
 
     for (int i = 0; i < num_threads * num_per_thread; ++i) {
-        if (!(lfsv[i] == i - 1)) {
+        if (!(concurrentSortedVector[i] == i - 1)) {
             std::cerr << "Error: not sorted at index " << i << std::endl;
             std::exit(EXIT_FAILURE);
         }
     }
     std::cout << "All sorted!\n";
 }
-void ReadPosition0(ConcurrentSortedVector& lfsv) {
+void ReadPosition0(ConcurrentSortedVector<int>& concurrentSortedVector) {
     int c = 0;
     while (doread.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        if (lfsv[0] != -1) {
+        if (concurrentSortedVector[0] != -1) {
             std::cout << "not -1 on iteration " << c << "\n"; // see main - all element are non-negative, so index 0 should always be -1
         }
         ++c;
     }
 }
-void InsertRange(ConcurrentSortedVector& lfsv, int b, int e) {
+void InsertRange(ConcurrentSortedVector<int>& concurrentSortedVector, int b, int e) {
     int* range = new int[e - b];
     for (int i = b; i < e; ++i) {
         range[i - b] = i;
@@ -105,7 +105,7 @@ void InsertRange(ConcurrentSortedVector& lfsv, int b, int e) {
     std::srand(static_cast<unsigned int>(std::time(NULL)));
     std::random_shuffle(range, range + e - b);
     for (int i = 0; i < e - b; ++i) {
-        lfsv.Insert(range[i]);
+        concurrentSortedVector.Insert(range[i]);
     }
     delete[] range;
 }
