@@ -1,0 +1,26 @@
+PRG=Implementation.exe
+
+GCC=g++
+GCCFLAGS=-O3 -Wall -Wextra -std=c++11 -latomic -mcx16 -pthread
+
+# Object files
+OBJECTS=driver.o Ratio.o
+
+# Build the final executable
+all: $(PRG)
+
+$(PRG): $(OBJECTS)
+	$(GCC) -o $@ $^ $(GCCFLAGS)
+
+# Compile driver.o
+driver.o: driver.cpp
+	$(GCC) $(GCCFLAGS) -c driver.cpp -o $@
+
+# Compile Ratio.o
+Ratio.o: Ratio.cpp
+	$(GCC) $(GCCFLAGS) -c Ratio.cpp -o $@
+
+clean:
+	rm -f *.exe *.o $(PRG)
+
+.PHONY: all clean

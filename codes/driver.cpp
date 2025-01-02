@@ -17,10 +17,10 @@
 const std::vector<int> Threads = { 1,2,3,4,5,6,7,8, 16 };
 
 //for the quick sort
-constexpr int RATIO_DATA_SIZE = 100;
+constexpr int RATIO_DATA_SIZE = 150;
 //for the concurrent vector
-constexpr int DATA_SIZE = 50000;
-constexpr int MEMORY_BANK_SIZE = 1000;
+constexpr int DATA_SIZE = 20000;
+constexpr int MEMORY_BANK_SIZE = 600;
 //-------------------------------------------------------------
 
 std::atomic<bool> doread(true);
